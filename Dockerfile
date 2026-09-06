@@ -10,5 +10,5 @@ RUN mvn -B package -DskipTests         # 测试已在 CI 跑过,这里跳过避�
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-EXPOSE 8080                            # 改成你 application.yml 里的端口
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

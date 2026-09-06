@@ -33,4 +33,15 @@
       <version>3.4.7</version>
     </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>3.4.7</version>
+        <!-- 如果你没用 spring-boot-starter-parent 做父 POM,这里要加版本号:
+        <version>3.3.5</version>  换成你 Spring Boot 的版本 -->
+      </plugin>
+    </plugins>
+  </build>
 </project>
