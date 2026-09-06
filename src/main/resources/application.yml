@@ -1,0 +1,14 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: github_action
+
+  profiles:
+    active: dev          # 激活哪个环境（dev / test / prod）
+
+logging:
+  level:
+    root: INFO
+    com.song: DEBUG
