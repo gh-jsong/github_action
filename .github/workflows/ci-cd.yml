@@ -1,0 +1,86 @@
+name: CI/CD Pipeline
+
+# 触发条件:push 到 main、打 v 开头 tag、开 PR
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+# 权限:允许把镜像推到 GHCR
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}   # 自动变成 ghcr.io/用户名/仓库名
+
+jobs:
+  # ---------- ① CI:测试 ----------
+  test:
+    name: 测试
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      # ↓↓↓ 按你的技术栈替换这块(setup-node → setup-python / setup-java 等)
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 运行测试
+        run: npm test
+      # ↑↑↑
+
+  # ---------- ② 构建镜像并推送到 GHCR ----------
+  build-and-push:
+    name: 构建并推送镜像
+    needs: test                  # 测试通过才构建
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'   # PR 只测不发布
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      # GITHUB_TOKEN 是 GitHub 自动提供的,不需要配 secret
+      - name: 登录 GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 构建并推送
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}   # 带 commit 号便于回滚
+
+  # ---------- ③ 部署到云服务器 ----------
+  deploy:
+    name: 部署到云服务器
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'     # 只有 main 分支的 push 才部署
+    steps:
+      - name: SSH 到服务器执行部署
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}     # 云服务器公网 IP
+          username: ${{ secrets.DEPLOY_USER }} # SSH 用户名
+          key: ${{ secrets.DEPLOY_KEY }}       # SSH 私钥
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            docker compose pull                # 拉取最新镜像
+            docker compose up -d               # 重建容器
+            docker image prune -f              # 清理旧镜像
