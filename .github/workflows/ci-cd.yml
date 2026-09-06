@@ -17,7 +17,7 @@ env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}   # 自动变成 ghcr.io/用户名/仓库名
 
 jobs:
-  # ---------- ① CI:测试 ----------
+  # ---------- ① CI:测试(Spring Boot / Maven 版) ----------
   test:
     name: 测试
     runs-on: ubuntu-latest
@@ -25,31 +25,25 @@ jobs:
       - name: 拉取代码
         uses: actions/checkout@v4
 
-      # ↓↓↓ 按你的技术栈替换这块(setup-node → setup-python / setup-java 等)
-      - name: 安装 Node.js
-        uses: actions/setup-node@v4
+      - name: 安装 JDK 17
+        uses: actions/setup-java@v4
         with:
-          node-version: 20
-          cache: npm
+          distribution: temurin
+          java-version: '17'        # ← 改成你项目的 Java 版本
+          cache: maven              # 缓存依赖,加速后续构建
 
-      - name: 安装依赖
-        run: npm ci
+      - name: 运行单元测试
+        run: mvn -B test            # 若仓库用的是 gradlew,见下面"Gradle 版"
 
-      - name: 运行测试
-        run: npm test
-      # ↑↑↑
-
-  # ---------- ② 构建镜像并推送到 GHCR ----------
+  # ---------- ② 构建镜像并推送(不用改) ----------
   build-and-push:
     name: 构建并推送镜像
-    needs: test                  # 测试通过才构建
+    needs: test
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'   # PR 只测不发布
+    if: github.event_name != 'pull_request'
     steps:
-      - name: 拉取代码
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # GITHUB_TOKEN 是 GitHub 自动提供的,不需要配 secret
       - name: 登录 GHCR
         uses: docker/login-action@v3
         with:
@@ -64,7 +58,7 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:latest
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}   # 带 commit 号便于回滚
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
   # ---------- ③ 部署到云服务器 ----------
   deploy:
