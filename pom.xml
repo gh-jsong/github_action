@@ -22,9 +22,10 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.song</groupId>
-      <artifactId>github_action</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.10.0</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
