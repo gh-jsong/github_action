@@ -12,6 +12,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
   </properties>
 
   <dependencies>
@@ -39,8 +41,16 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>3.4.7</version>
-        <!-- 如果你没用 spring-boot-starter-parent 做父 POM,这里要加版本号:
-        <version>3.3.5</version>  换成你 Spring Boot 的版本 -->
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>com.song.App</mainClass>
+        </configuration>
       </plugin>
     </plugins>
   </build>
